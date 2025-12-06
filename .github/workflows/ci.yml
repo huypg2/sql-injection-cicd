@@ -28,8 +28,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r src/ml_training/requirements.txt
         pip install -r src/detection_api/requirements.txt
-        # Cài thêm thư viện để chạy test
-        pip install pytest httpx
+        # Cài thêm thư viện để chạy test và security gate
+        pip install pytest requests uvicorn
 
     # 4. Tự động sinh dữ liệu mới (Demo tính năng tự động hóa)
     - name: Auto-Generate Data
@@ -43,13 +43,30 @@ jobs:
         echo "Training model with new data..."
         python src/ml_training/scripts/train_compare.py
 
-    # 6. Chạy kiểm thử (Test Integration)
-    # Lưu ý: Nếu bạn chưa viết file test, bước này có thể tạm bỏ qua hoặc tạo file test giả
-    - name: Run Tests
+    # 6. Chạy kiểm thử Unit Test (Test Integration)
+    - name: Run Unit Tests
       run: |
-        # Tạo file test tạm thời nếu chưa có để demo CI xanh (Pass)
+        # Tạo file test tạm thời nếu chưa có (để đảm bảo CI không lỗi)
         mkdir -p src/tests
         echo "def test_dummy(): assert True" > src/tests/test_dummy.py
         
-        # Chạy test
+        # Chạy pytest
         pytest src/tests/
+
+    # --- PHẦN MỚI: TÍCH HỢP DEVSECOPS ---
+
+    # 7. Dựng API dậy để chuẩn bị test bảo mật
+    - name: Start API for Security Testing
+      run: |
+        # Chạy API dưới nền (background) dùng nohup
+        # Lưu ý đường dẫn module: src.detection_api.app
+        nohup uvicorn src.detection_api.app:app --host 0.0.0.0 --port 8000 &
+        
+        echo "⏳ Waiting for API to start..."
+        sleep 10 # Đợi 10s để API khởi động xong
+
+    # 8. Chạy Security Gate (Cổng An Ninh)
+    # Nếu bước này thất bại (AI không chặn được tấn công), GitHub Actions sẽ báo ĐỎ ngay
+    - name: 🛡️ Run Security Gate (Block Deploy if Fail)
+      run: |
+        python src/ci_cd_utils/scripts/security_gate.py
