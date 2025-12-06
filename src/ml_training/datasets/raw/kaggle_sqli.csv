@@ -1,0 +1,29 @@
+payload,label
+"SELECT * FROM users WHERE id = 1",1
+"admin' --",1
+"UNION SELECT 1, 2, 3--",1
+"OR 1=1",1
+"' or '1'='1",1
+"drop table users",1
+"WAITFOR DELAY '0:0:5'",1
+"1' AND 1=1; --",1
+"SELECT password FROM users",1
+"admin' #",1
+"1' OR '1'='1",1
+"search.php?id=1 UNION ALL SELECT 1, table_name FROM information_schema.tables",1
+"1; DROP TABLE users",1
+"hello world",0
+"my name is john",0
+"search for product apple",0
+"login with password",0
+"contact us for support",0
+"user@example.com",0
+"The quick brown fox",0
+"SELECT * FROM products",0
+"UPDATE users SET name='John'",0
+"how to cook pasta",0
+"best movies 2024",0
+"google search",0
+"index.php?id=10",0
+"SELECT id, name FROM employees",0
+"INSERT INTO logs (msg) VALUES ('error')",0

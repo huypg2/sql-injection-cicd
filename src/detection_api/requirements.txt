@@ -1,0 +1,15 @@
+Flask
+flask-cors
+gunicorn
+
+scikit-learn
+numpy
+pandas
+joblib
+
+python-json-logger
+
+requests
+fastapi
+uvicorn
+prometheus-client

@@ -1,0 +1,3 @@
+-r src/detection_api/requirements.txt
+-r src/ml_training/requirements.txt
+-r ci_cd_utils/requirements.txt

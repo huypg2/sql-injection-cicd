@@ -1,0 +1,11 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: train-job
+spec:
+  template:
+    spec:
+      containers:
+        - name: train-worker
+          image: your-dockerhub/train-worker:latest
+      restartPolicy: Never

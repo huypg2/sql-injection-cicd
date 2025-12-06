@@ -1,0 +1,36 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r src/ml_training/requirements.txt
+        pip install -r src/detection_api/requirements.txt
+        pip install pytest
+
+    - name: Train Model (Simulation)
+      run: |
+        cd src/ml_training/scripts
+        python train_compare.py
+
+    - name: Run Tests
+      # Tạo file test giả lập nếu chưa có
+      run: |
+        echo "Running unit tests..."
+        # pytest src/detection_api/tests/

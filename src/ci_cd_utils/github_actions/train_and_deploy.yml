@@ -1,0 +1,26 @@
+name: Train and Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  train-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+      - name: Install dependencies
+        run: pip install -r src/ml_training/requirements.txt joblib pandas scikit-learn
+      - name: Preprocess
+        run: python src/ml_training/scripts/preprocess_all.py
+      - name: Train and select best model
+        run: python src/ml_training/scripts/train_compare.py
+      - name: Build and push Docker image
+        run: bash src/ci_cd_utils/scripts/build_and_push.sh
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f infra/k8s/detection-deployment.yaml
+          kubectl apply -f infra/k8s/detection-service.yaml

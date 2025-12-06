@@ -1,0 +1,14 @@
+numpy
+pandas
+scikit-learn
+joblib
+
+matplotlib
+seaborn
+
+# Jupyter notebook
+jupyter
+notebook
+
+# For experiments
+rich

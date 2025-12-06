@@ -1,0 +1,30 @@
+version: '3.8' # (Nếu bạn đã xóa dòng này thì cứ để trống, không sao)
+
+services:
+  detection-api:
+    build:
+      context: ../
+      dockerfile: infra/docker/detection_api.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/detection_api/models/sqli_model.pkl
+    networks:
+      - sqli-net
+
+  # --- THÊM PHẦN NÀY ---
+  frontend:
+    image: python:3.9-slim
+    working_dir: /app
+    volumes:
+      - ../src/frontend:/app # Mount code để sửa là cập nhật ngay
+    command: >
+      bash -c "pip install -r requirements.txt && streamlit run app.py --server.port 8501 --server.address 0.0.0.0"
+    ports:
+      - "8501:8501"
+    networks:
+      - sqli-net
+  # ---------------------
+
+networks:
+  sqli-net:
