@@ -1,6 +1,5 @@
 name: SQLi Detection CI/CD
 
-# Kích hoạt khi có code đẩy lên nhánh main
 on:
   push:
     branches: [ main ]
@@ -12,62 +11,67 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # 1. Lấy code từ GitHub về máy ảo Ubuntu
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # 2. Cài đặt Python 3.10
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    # 3. Cài đặt các thư viện cần thiết
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r src/ml_training/requirements.txt
         pip install -r src/detection_api/requirements.txt
-        # Cài thêm thư viện để chạy test và security gate
-        # Thêm fastapi để đảm bảo không lỗi import khi chạy API
         pip install pytest requests uvicorn fastapi
 
-    # 4. Tự động sinh dữ liệu mới (Demo tính năng tự động hóa)
     - name: Auto-Generate Data
       run: |
         echo "Generating synthetic data..."
         python src/ml_training/scripts/generate_data.py
 
-    # 5. Tự động Train lại Model
     - name: Auto-Train Model
       run: |
         echo "Training model with new data..."
         python src/ml_training/scripts/train_compare.py
 
-    # 6. Chạy kiểm thử Unit Test (Test Integration)
     - name: Run Unit Tests
       run: |
-        # Tạo file test tạm thời nếu chưa có (để đảm bảo CI không lỗi)
         mkdir -p src/tests
         echo "def test_dummy(): assert True" > src/tests/test_dummy.py
-        
-        # Chạy pytest
         pytest src/tests/
 
-    # --- PHẦN TÍCH HỢP DEVSECOPS (Sửa lại cho gọn) ---
+    # --- SỬA LỖI Ở ĐÂY: KHỞI ĐỘNG API ĐÚNG CÁCH ---
 
-    # 7. Dựng API dậy để chuẩn bị test bảo mật
     - name: Start API for Security Testing
       run: |
-        # Chạy API dưới nền (background) dùng nohup
-        # Lưu ý đường dẫn module: src.detection_api.app
-        nohup uvicorn src.detection_api.app:app --host 0.0.0.0 --port 8000 &
+        # 1. Đi vào đúng thư mục chứa code API
+        cd src/detection_api
         
-        echo "⏳ Waiting for API to start..."
-        sleep 10 # Đợi 10s để API khởi động xong
+        # 2. Thiết lập biến môi trường cho Model (quan trọng!)
+        export MODEL_PATH=models/sqli_model.pkl
+        
+        # 3. Chạy API và ghi lỗi ra file 'api_startup.log' để debug
+        # 'nohup' để chạy nền, '2>&1' để bắt cả lỗi
+        nohup uvicorn app:app --host 0.0.0.0 --port 8000 > ../../api_startup.log 2>&1 &
+        
+        echo "⏳ Waiting 10s for API to start..."
+        sleep 10
+        
+        # 4. In thử log ra xem API có sống không
+        echo "--- API LOGS (STARTUP) ---"
+        cat ../../api_startup.log
+        echo "--------------------------"
 
-    # 8. Chạy Security Gate (Cổng An Ninh)
-    # Nếu bước này thất bại (AI không chặn được tấn công), GitHub Actions sẽ báo ĐỎ ngay
-    - name: 🛡️ Run Security Gate (Block Deploy if Fail)
+    - name: 🛡️ Run Security Gate
       run: |
+        # Chạy script test
         python src/ci_cd_utils/scripts/security_gate.py
+      
+    # Bước này giúp bạn đọc lỗi nếu Security Gate vẫn fail
+    - name: Print API Logs on Failure
+      if: failure()
+      run: |
+        echo "🚨 JOB FAILED! Showing full API logs:"
+        cat api_startup.log
