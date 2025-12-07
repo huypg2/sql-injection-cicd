@@ -29,7 +29,8 @@ jobs:
         pip install -r src/ml_training/requirements.txt
         pip install -r src/detection_api/requirements.txt
         # Cài thêm thư viện để chạy test và security gate
-        pip install pytest requests uvicorn
+        # Thêm fastapi để đảm bảo không lỗi import khi chạy API
+        pip install pytest requests uvicorn fastapi
 
     # 4. Tự động sinh dữ liệu mới (Demo tính năng tự động hóa)
     - name: Auto-Generate Data
@@ -53,7 +54,7 @@ jobs:
         # Chạy pytest
         pytest src/tests/
 
-    # --- PHẦN MỚI: TÍCH HỢP DEVSECOPS ---
+    # --- PHẦN TÍCH HỢP DEVSECOPS (Sửa lại cho gọn) ---
 
     # 7. Dựng API dậy để chuẩn bị test bảo mật
     - name: Start API for Security Testing

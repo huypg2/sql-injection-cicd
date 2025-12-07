@@ -161,10 +161,21 @@ sqli_bases = [
     "AD/**/MIN' --",
 ]
 
-
+# ==========================================
 # 2. KHO MẪU VÔ HẠI (NORMAL)
+# ==========================================
 normal_bases = [
-   
+    # --- DATA AUGMENTATION: NHÂN BẢN CÂU BỊ LỖI ĐỂ DẠY AI ---
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
+    "Select a fruit from the basket", 
     # --------------------------------------------------------
 
     # Giao tiếp thông thường
