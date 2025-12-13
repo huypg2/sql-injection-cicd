@@ -159,6 +159,15 @@ sqli_bases = [
     "UNION SEL/**/ECT",
     "1'/**/OR/**/1=1",
     "AD/**/MIN' --",
+    # --- CÁC MẪU NÀY ĐỂ AI HỌC ĐƯỢC CHIÊU LÁCH LUẬT ---
+    "UN/**/ION SEL/**/ECT", 
+    "SE/**/LECT * FROM users",
+    "UN/**/ION SELECT",
+    "UNION SEL/**/ECT",
+    "1'/**/OR/**/1=1",
+    "AD/**/MIN' --",
+    "sel/**/ect user from admins",
+    # -------------------------------------------------------
 ]
 
 # ==========================================
